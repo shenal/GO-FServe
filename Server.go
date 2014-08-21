@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
 )
 
 
@@ -120,8 +121,9 @@ func uploadFunc(w http.ResponseWriter, r *http.Request) {
 	} else {
 		r.ParseForm()
 		// logic part of log in
-		url := strings.Join(r.Form["URL"], "")
-		url=strings.Replace(url, " ", "%20", -1)
+		urlar:=[]string{"'",strings.Join(r.Form["URL"],""),"'"}
+		url := strings.Join(urlar, "")
+		url = strings.Replace(url, " ", "%20", -1)
 		fmt.Println("URL:", url)
 
 		datecom := "date '+%Y%m%d-%H%M%S'"
@@ -134,18 +136,24 @@ func uploadFunc(w http.ResponseWriter, r *http.Request) {
 		s := []string{"/usr/bin/wget -O ", "public/", date0, " ", url}
 		command := strings.Join(s, "")
 
-		_, err := exec.Command("sh", "-c", command).Output()
+		 _, err :=  exec.Command("sh", "-c", command).Output()
 		if err != nil {
-
-			log.Fatal(err)
+			fmt.Fprintf(w, "Error")
+			downloads[url] = "error"
+			return
+		} else {
+			fmt.Printf("Command Executed")
+			downloads[url] = "completed"
+			link := "Submitted <a href='/status'>status</a><br/> <a href='/files'>files</a>"
+			fmt.Fprintf(w, link)
+			return
 		}
-		fmt.Printf("Command Executed")
-		downloads[url] = "completed"
-		link:= "Submitted <a href='/status'>status</a><br/> <a href='/files'>files</a>"
-		fmt.Fprintf(w,link)
 	}
-	return
+
 }
+
+
+
 func statusDownloads(w http.ResponseWriter, r *http.Request) {
 	out := []string{}
 	for k, v := range files {
